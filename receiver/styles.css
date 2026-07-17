@@ -1,0 +1,99 @@
+html,
+body {
+  margin: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background: #000;
+  color: #fff;
+  font-family:
+    "Inter",
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+.stage {
+  position: fixed;
+  inset: 0;
+  background: #000;
+}
+
+.video-remote,
+.video-share {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #000;
+}
+
+/* Presentation share sits on top; shrink the camera to a corner. */
+.video-share {
+  z-index: 2;
+}
+
+.video-share:not([hidden]) ~ .video-remote,
+.stage:has(.video-share:not([hidden])) .video-remote {
+  z-index: 3;
+  inset: auto 3vw 3vw auto;
+  width: 22vw;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  border-radius: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  object-fit: cover;
+}
+
+.overlay {
+  position: absolute;
+  z-index: 5;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 16px;
+  text-align: center;
+  background: radial-gradient(circle at center, #1a1a1a 0%, #000 100%);
+}
+
+.overlay__logo {
+  font-size: 72px;
+  line-height: 1;
+  color: var(--mds-color-theme-text-accent-normal, #4a7fff);
+}
+
+.overlay__title {
+  margin: 0;
+  font-size: clamp(28px, 4vw, 48px);
+  font-weight: 700;
+}
+
+.overlay__status {
+  margin: 0;
+  font-size: clamp(16px, 2vw, 22px);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.overlay__spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid rgba(255, 255, 255, 0.2);
+  border-top-color: var(--mds-color-theme-text-accent-normal, #4a7fff);
+  border-radius: 50%;
+  animation: spin 850ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

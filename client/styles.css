@@ -1,0 +1,573 @@
+/* Semantic aliases on top of Momentum Webex theme tokens (light-stable / dark-stable). */
+
+html.mds-theme-stable-lightWebex,
+html.mds-theme-stable-darkWebex {
+  --app-bg: var(--mds-color-theme-background-solid-secondary-normal);
+  --app-surface: var(--mds-color-theme-background-solid-primary-normal);
+  --app-surface-raised: var(--mds-color-theme-background-solid-quaternary-normal);
+  --app-surface-muted: var(--mds-color-theme-background-solid-tertiary-normal);
+  --app-border: var(--mds-color-theme-outline-primary-normal);
+  --app-text: var(--mds-color-theme-text-primary-normal);
+  --app-text-secondary: var(--mds-color-theme-text-secondary-normal);
+  --app-accent: var(--mds-color-theme-background-accent-normal);
+  --app-accent-hover: var(--mds-color-theme-background-accent-active);
+  --app-accent-text: var(--mds-color-theme-text-accent-normal);
+  --app-success: var(--mds-color-theme-text-success-normal);
+  --app-success-bg: var(--mds-color-theme-background-alert-success-normal);
+  --app-warning: var(--mds-color-theme-text-warning-normal);
+  --app-danger: var(--mds-color-theme-text-error-normal);
+  --app-danger-bg: var(--mds-color-theme-background-alert-error-normal);
+  --app-info-bg: var(--mds-color-theme-background-alert-theme-normal);
+  --app-button-primary: var(--mds-color-theme-button-primary-normal);
+  --app-button-primary-text: var(--mds-color-theme-inverted-text-primary-normal);
+  --app-button-primary-hover: var(--mds-color-theme-button-primary-hover);
+  --app-button-primary-disabled: var(--mds-color-theme-button-primary-disabled);
+  --app-button-secondary-hover: var(--mds-color-theme-button-secondary-hover);
+  --app-input-border: var(--mds-color-theme-outline-input-normal);
+  --app-input-border-active: var(--mds-color-theme-outline-input-active);
+  --app-pill-active: var(--mds-color-theme-background-secondary-normal);
+  --app-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--app-text);
+  background: var(--app-bg);
+  font-family:
+    "Inter",
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+button {
+  min-height: 40px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 0 20px;
+  background: var(--app-button-primary);
+  color: var(--app-button-primary-text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 140ms ease,
+    border-color 140ms ease,
+    opacity 140ms ease;
+}
+
+button:hover:not(:disabled) {
+  background: var(--app-button-primary-hover);
+}
+
+button:focus-visible {
+  outline: 2px solid var(--app-accent-text);
+  outline-offset: 2px;
+}
+
+button:disabled {
+  background: var(--app-button-primary-disabled);
+  color: var(--app-text-secondary);
+  cursor: not-allowed;
+}
+
+.secondary-button {
+  background: transparent;
+  border-color: var(--app-border);
+  color: var(--app-text);
+}
+
+.secondary-button:hover:not(:disabled) {
+  background: var(--app-button-secondary-hover);
+  border-color: var(--app-input-border-active);
+}
+
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.icon-button:not(.icon-button--with-label) {
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  min-height: 40px;
+}
+
+.icon-button .icon {
+  display: block;
+  flex-shrink: 0;
+  font-size: 20px;
+  line-height: 1;
+  pointer-events: none;
+  color: inherit;
+}
+
+.icon-button:disabled .icon {
+  opacity: 0.55;
+}
+
+.icon-button.secondary-button:disabled {
+  background: transparent;
+  border-color: var(--app-border);
+  color: var(--app-text-secondary);
+}
+
+.icon-button--with-label {
+  width: auto;
+  min-width: 0;
+  min-height: 40px;
+  padding: 0 16px;
+  gap: 8px;
+}
+
+.icon-button__label {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Header */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  min-height: 56px;
+  padding: 12px clamp(20px, 4vw, 40px);
+  border-bottom: 1px solid var(--app-border);
+  background: var(--app-surface);
+}
+
+.app-header__brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.app-header__logo {
+  font-size: 28px;
+  line-height: 1;
+  color: var(--app-accent-text);
+}
+
+.app-header__product {
+  font-size: clamp(20px, 3vw, 28px);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--app-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.app-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.state-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--app-border);
+  background: var(--app-surface-muted);
+  color: var(--app-text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.state-pill--active {
+  border-color: transparent;
+  background: var(--app-info-bg);
+  color: var(--app-accent-text);
+}
+
+/* Main content */
+.app-main {
+  width: 100%;
+  padding: clamp(24px, 4vw, 40px) clamp(20px, 4vw, 40px) 48px;
+}
+
+.app-content {
+  width: min(1000px, 100%);
+  margin: 0 auto;
+}
+
+.page-stack {
+  display: grid;
+  gap: 20px;
+}
+
+.step-card {
+  display: grid;
+  gap: 20px;
+  padding: clamp(24px, 4vw, 32px);
+  border: 1px solid var(--app-border);
+  border-radius: 16px;
+  background: var(--app-surface);
+  box-shadow: var(--app-shadow);
+}
+
+.control-step {
+  gap: 24px;
+}
+
+h1,
+h2,
+p {
+  margin-top: 0;
+}
+
+h2 {
+  margin-bottom: 0;
+  font-size: clamp(22px, 3vw, 28px);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--app-text);
+}
+
+.step-card > p {
+  max-width: 42rem;
+  color: var(--app-text-secondary);
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+.step-kicker {
+  display: inline-flex;
+  align-self: start;
+  margin: 0 0 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--app-pill-active);
+  color: var(--app-text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.step-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-top: 4px;
+}
+
+.inline-message {
+  margin: 0;
+  color: var(--app-text-secondary);
+  font-size: 14px;
+}
+
+.inline-message--error {
+  color: var(--app-danger);
+}
+
+.loader {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--app-surface-muted);
+  border-top-color: var(--app-accent);
+  border-radius: 50%;
+  animation: spin 850ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.control-section {
+  display: grid;
+  gap: 12px;
+}
+
+.control-section h3 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--app-text-secondary);
+}
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+/* Join form */
+.join-form {
+  display: flex;
+  gap: 10px;
+}
+
+.text-input {
+  flex: 1;
+  min-width: 0;
+  min-height: 48px;
+  padding: 10px 16px;
+  border: 1px solid var(--app-input-border);
+  border-radius: 999px;
+  background: var(--app-surface);
+  color: var(--app-text);
+  font: inherit;
+}
+
+.text-input:focus-visible {
+  outline: none;
+  border-color: var(--app-input-border-active);
+  box-shadow: 0 0 0 2px var(--app-info-bg);
+}
+
+.input-hint {
+  color: var(--app-text-secondary);
+  line-height: 1.4;
+}
+
+/* Meeting list */
+.meeting-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.meeting-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--app-border);
+  border-radius: 12px;
+  background: var(--app-surface-muted);
+}
+
+.meeting-item__info {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.meeting-item__title {
+  font-weight: 600;
+  color: var(--app-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.meeting-item__time {
+  color: var(--app-text-secondary);
+  font-size: 14px;
+}
+
+.meeting-item__join {
+  flex-shrink: 0;
+  min-height: 40px;
+}
+
+.meeting-empty {
+  padding: 16px;
+  border: 1px dashed var(--app-border);
+  border-radius: 12px;
+  color: var(--app-text-secondary);
+  background: var(--app-surface-muted);
+  list-style: none;
+}
+
+/* Meeting stage */
+.meeting-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.video-stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 16px;
+  background: #000;
+}
+
+.video-remote,
+.video-share {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #000;
+}
+
+.video-share {
+  z-index: 2;
+}
+
+/* When presenting, shrink the remote camera into a corner. */
+.video-stage--sharing .video-remote {
+  z-index: 3;
+  inset: auto 16px 16px auto;
+  width: 22%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  border-radius: 10px;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  object-fit: cover;
+}
+
+.video-local {
+  position: absolute;
+  z-index: 4;
+  left: 16px;
+  bottom: 16px;
+  width: 20%;
+  min-width: 120px;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  background: #111;
+  transform: scaleX(-1);
+}
+
+.video-placeholder {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.7);
+  text-align: center;
+}
+
+.video-placeholder .icon {
+  font-size: 42px;
+}
+
+.video-placeholder p {
+  margin: 0;
+}
+
+/* Meeting controls */
+.meeting-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+}
+
+.control-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 22px;
+  border-radius: 999px;
+  background: var(--app-surface-muted);
+  border: 1px solid var(--app-border);
+  color: var(--app-text);
+}
+
+.control-pill:hover:not(:disabled) {
+  background: var(--app-pill-active);
+  border-color: var(--app-input-border-active);
+}
+
+.control-pill .icon {
+  font-size: 20px;
+}
+
+.control-pill--active {
+  background: var(--app-info-bg);
+  border-color: transparent;
+  color: var(--app-accent-text);
+}
+
+.control-pill--danger {
+  background: var(--app-danger);
+  border-color: transparent;
+  color: #fff;
+}
+
+.control-pill--danger:hover:not(:disabled) {
+  background: var(--app-danger);
+  filter: brightness(0.92);
+}
+
+/* Cast panel */
+.cast-panel {
+  padding-top: 8px;
+  border-top: 1px solid var(--app-border);
+}
+
+.cast-status {
+  color: var(--app-text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.cast-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.cast-launcher {
+  --disconnected-color: var(--app-text-secondary);
+  --connected-color: var(--app-accent-text);
+  width: 32px;
+  height: 32px;
+}
+
+.cast-receiver-status {
+  color: var(--app-text-secondary);
+  line-height: 1.4;
+}
+
+@media (max-width: 720px) {
+  .app-header__product {
+    font-size: 18px;
+  }
+
+  .join-form {
+    flex-direction: column;
+  }
+
+  .video-local {
+    min-width: 90px;
+  }
+}

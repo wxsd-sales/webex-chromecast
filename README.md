@@ -1,68 +1,116 @@
 # Webex Chromecast
 
-This is a example web app that shows how to display a Webex Meeting on a nearby Chromecast
+An example that lets a user join a Webex meeting from their browser and cast the
+meeting's audio, video, and presentation share to a nearby Chromecast running a
+custom Web Receiver.
 
 ## Overview
 
-Go into detail about the implementation.   3-4 Sentences
-**HOW** the implementation works. You need not give end-to-end details but an overview.
+There are two web apps in this repo:
 
+- **`/client`** – a Webex "sender" web app. The user signs in with Webex (OAuth
+  implicit `token` flow via `oauth.js`), the app lists their scheduled and
+  in-progress meetings through the Webex REST API, and joins the selected meeting
+  in the browser using the [Webex Web SDK](https://developer.webex.com/meeting/docs/sdks/webex-meetings-sdk)
+  with the browser microphone and camera. The [Google Cast Web Sender SDK](https://developers.google.com/cast/docs/web_sender)
+  discovers nearby Chromecast devices; when the user casts, the app sends the
+  meeting join instructions to the receiver over a custom Cast message channel.
+- **`/receiver`** – a custom Chromecast [Web Receiver](https://developers.google.com/cast/docs/web_receiver).
+  When it receives join instructions from the sender, it uses the Webex Web SDK
+  to join the same meeting in receive-only mode and renders the remote video,
+  audio, and presentation share full-screen on the TV.
 
+The Momentum Design icons, tokens, and illustrations are used for styling in
+both apps, and are loaded from CDN in each `index.html`.
 
-### Flow Diagram
+### Diagrams
 
-<!-- *MANDATORY*  Insert Your Flow Diagram Here (if small PoC, alternative option is to include break down how it works here instead of diagram) -->
-![image/gif](insert img link here)
+<details>
 
+  <summary>Show Sequence Diagram</summary>
+  
+  ```mermaid
+  sequenceDiagram
+      actor User
+      participant Browser as Browser <br>(client app)
+      participant Webex
+      participant Receiver as Chromecast <br>(receiver)
 
+      User->>Browser: Open client app
+      Browser->>Webex: Sign in (OAuth token flow)
+      Webex-->>Browser: Access token
+      Browser->>Webex: List meetings (REST)
+      Webex-->>Browser: Scheduled / in-progress meetings
+
+      User->>Browser: Join meeting
+      Browser->>Webex: Join with mic + camera (Web SDK)
+      Webex-->>Browser: Remote audio / video / share
+
+      User->>Browser: Cast to Chromecast (Cast Sender SDK)
+      Browser->>Receiver: JOIN_MEETING {destination, token} (urn:x-cast)
+      Receiver->>Webex: Join same meeting, receive-only (Web SDK)
+      Webex-->>Receiver: Remote audio / video / share
+      Receiver-->>Browser: STATUS updates
+      Receiver-->>User: Display meeting media on TV
+
+````
+</details>
 
 ## Setup
 
-### Prerequisites & Dependencies: 
+### Prerequisites & Dependencies
 
-- Is this dependant on having another repo
-- Insert pre-requisites in bullets
-- Insert pre-requisite here  Also state any assumptions that you may have made about the user.
-- Limit nested bullets
+- Node.js 18+ (only used for the tiny static file server and dev proxy).
+- A Webex account and a Webex OAuth integration configured for the implicit
+`token` grant. The client id and redirect URI are configured in
+`client/scripts/oauth.js`. The integration needs the `spark:all`, `spark:kms`,
+and `meeting:schedules_read` scopes.
+- A Google Cast application id for the custom receiver, registered in the
+[Google Cast Developer Console](https://cast.google.com/publish). Set it in
+`client/scripts/config.js` (`CHROMECAST_RECEIVER_APPLICATION_ID`). The receiver
+must be hosted over HTTPS and registered with that URL.
+- A Chromecast device on the same network for end-to-end testing.
 
+### Installation Steps
 
-<!-- GETTING STARTED -->
+1. Serve the **client** app locally:
 
-### Installation Steps:
-1.  Include step one here
-    ```sh
-    insert line of code here if applicable
-    ```
-2.  Insert step two here
-    Insert screenshot, if applicable
-    
-    
-    
+ ```sh
+ npm run serve
+````
+
+This serves `client/` at `http://127.0.0.1:4173`. Because the Webex REST API
+does not send CORS headers, run the bundled proxy in a second terminal when
+testing on localhost:
+
+```sh
+npm run proxy
+```
+
+2. Host the **receiver** app (`receiver/`) over HTTPS and register its URL in the
+   Google Cast Developer Console under your application id. Add your test
+   Chromecast as a registered device so it can load an unpublished receiver.
+
+3. Open the client app, sign in with Webex, pick or enter a meeting, then use the
+   Cast button to select your Chromecast and send the meeting to the TV.
+
+> **Security note:** for demo simplicity the receiver reuses the signed-in
+> user's Webex access token (sent over the local Cast channel) to join the
+> meeting. In production, mint a short-lived guest token for the receiver
+> instead of forwarding the user's token, and never log tokens.
+
 ## Demo
 
-<!-- Insert link to the website below (if deployed). -->
-Check out our live demo, available [here](<insert link>)!
-
-<!-- Keep the following statement -->
-*For more demos & PoCs like this, check out our [Webex Labs site](https://collabtoolbox.cisco.com/webex-labs).
-
-
-<!-- Update your vidcast title, video screenshot, vidcast/youtube link & name -->
-[![Your Video Title ](assets/peer_support_main.PNG)](https://www.youtube.com/watch?v=SqZhiC8jHhU&t=10s, "<insert demo name here>")
-
-
+_For more demos & PoCs like this, check out our [Webex Labs site](https://collabtoolbox.cisco.com/webex-labs)._
 
 ## License
-<!-- MAKE SURE an MIT license is included in your Repository. If another license is needed, verify with management. This is for legal reasons.--> 
 
-<!-- Keep the following statement -->
 All contents are licensed under the MIT license. Please see [license](LICENSE) for details.
 
-
 ## Disclaimer
-<!-- Keep the following here -->  
- Everything included is for demo and Proof of Concept purposes only. Use of the site is solely at your own risk. This site may contain links to third party content, which we do not warrant, endorse, or assume liability for. These demos are for Cisco Webex usecases, but are not Official Cisco Webex Branded demos.
 
+Everything included is for demo and Proof of Concept purposes only. Use of the site is solely at your own risk. This site may contain links to third party content, which we do not warrant, endorse, or assume liability for. These demos are for Cisco Webex usecases, but are not Official Cisco Webex Branded demos.
 
 ## Questions
-Please contact the WXSD team at [wxsd@external.cisco.com](mailto:wxsd@external.cisco.com?subject=webex-chromecast) for questions. Or, if you're a Cisco internal employee, reach out to us on the Webex App via our bot (globalexpert@webex.bot). In the "Engagement Type" field, choose the "API/SDK Proof of Concept Integration Development" option to make sure you reach our team. 
+
+Please contact the WXSD team at [wxsd@external.cisco.com](mailto:wxsd@external.cisco.com?subject=webex-chromecast) for questions. Or, if you're a Cisco internal employee, reach out to us on the Webex App via our bot (globalexpert@webex.bot). In the "Engagement Type" field, choose the "API/SDK Proof of Concept Integration Development" option to make sure you reach our team.

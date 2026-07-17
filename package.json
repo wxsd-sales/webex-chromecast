@@ -1,0 +1,24 @@
+{
+  "name": "webex-chromecast",
+  "version": "1.0.0",
+  "description": "example web app that shows how to display a Webex Meeting on a nearby Chromecast",
+  "keywords": [
+    "webex"
+  ],
+  "homepage": "https://github.com/wxsd-sales/webex-chromecast#readme",
+  "bugs": {
+    "url": "https://github.com/wxsd-sales/webex-chromecast/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wxsd-sales/webex-chromecast.git"
+  },
+  "license": "MIT",
+  "author": "William Mills",
+  "type": "module",
+  "scripts": {
+    "serve": "node client/scripts/serve-web.mjs",
+    "proxy": "node client/scripts/dev-proxy.mjs",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}

@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      (function initMomentumTheme() {
+        const getHashTheme = () => {
+          const raw = window.location.hash.startsWith("#")
+            ? window.location.hash.slice(1)
+            : window.location.hash;
+
+          if (!raw) {
+            return null;
+          }
+
+          const theme = new URLSearchParams(raw).get("theme");
+          return theme === "light" || theme === "dark" ? theme : null;
+        };
+
+        const apply = () => {
+          const forcedTheme = getHashTheme();
+          const dark = forcedTheme
+            ? forcedTheme === "dark"
+            : window.matchMedia("(prefers-color-scheme: dark)").matches;
+          const root = document.documentElement;
+
+          root.classList.remove(
+            "mds-theme-stable-lightWebex",
+            "mds-theme-stable-darkWebex",
+          );
+          root.classList.add(
+            dark
+              ? "mds-theme-stable-darkWebex"
+              : "mds-theme-stable-lightWebex",
+          );
+          root.style.colorScheme = dark ? "dark" : "light";
+        };
+
+        apply();
+        window
+          .matchMedia("(prefers-color-scheme: dark)")
+          .addEventListener("change", () => {
+            if (!getHashTheme()) {
+              apply();
+            }
+          });
+      })();
+    </script>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@momentum-design/icons@0.54.0/dist/data/MomentumFontIcons.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@momentum-design/tokens@0.10.4/dist/css/theme/webex/light-stable.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@momentum-design/tokens@0.10.4/dist/css/theme/webex/dark-stable.css"
+    />
+    <meta
+      name="momentum-illustrations-cdn"
+      content="https://cdn.jsdelivr.net/npm/@momentum-design/illustrations@0.3.0/dist/svg"
+    />
+    <title>Webex Meeting Cast</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script crossorigin src="https://cdn.jsdelivr.net/npm/webex/umd/webex.min.js"></script>
+    <script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="app-header__brand">
+        <span class="icon icon-webex-helix-regular app-header__logo" aria-hidden="true"></span>
+        <span class="app-header__product">Webex Meeting Cast</span>
+      </div>
+      <div class="app-header__actions">
+        <span id="castStatePill" class="state-pill" hidden></span>
+        <button id="signOutBtn" type="button" class="secondary-button" hidden>
+          Sign out
+        </button>
+      </div>
+    </header>
+
+    <main class="app-main" aria-labelledby="pageTitle">
+      <div class="app-content">
+        <div class="page-stack" aria-live="polite">
+          <!-- Step: sign in -->
+          <section class="step-card" data-step="signin">
+            <h2>Sign in with Webex</h2>
+            <p>
+              Sign in with your Webex account to see your meetings, join from
+              this browser, and cast the meeting to a nearby Chromecast.
+            </p>
+            <div class="step-actions">
+              <button
+                id="signInBtn"
+                type="button"
+                class="icon-button icon-button--with-label secondary-button"
+                disabled
+              >
+                <span class="icon icon-webex-helix-regular" aria-hidden="true"></span>
+                <span class="icon-button__label">Sign in with Webex</span>
+              </button>
+            </div>
+            <p id="signinMessage" class="inline-message" hidden></p>
+          </section>
+
+          <!-- Step: loading -->
+          <section class="step-card" data-step="loading" hidden>
+            <h2>Getting things ready</h2>
+            <p id="loadingMessage">
+              Connecting to Webex and loading your meetings.
+            </p>
+            <div class="loader" aria-hidden="true"></div>
+          </section>
+
+          <!-- Step: meeting list -->
+          <section class="step-card" data-step="meetings" hidden>
+            <section class="control-section" aria-label="Join a meeting">
+              <h3>Join a meeting</h3>
+              <form id="joinForm" class="join-form">
+                <input
+                  id="joinInput"
+                  type="text"
+                  class="text-input"
+                  autocomplete="off"
+                  placeholder="Meeting number, link, or SIP address"
+                  aria-label="Meeting number, link, or SIP address"
+                />
+                <button id="joinManualBtn" type="submit">Join</button>
+              </form>
+              <small class="input-hint"
+                >Enter a meeting number (e.g. 123 456 7890), a webex.com link, or
+                a SIP address.</small
+              >
+            </section>
+
+            <section class="control-section" aria-label="Your meetings">
+              <div class="section-heading">
+                <h3>Your meetings</h3>
+                <button
+                  id="refreshMeetingsBtn"
+                  type="button"
+                  class="icon-button icon-button--with-label secondary-button"
+                >
+                  <span class="icon icon-refresh-regular" aria-hidden="true"></span>
+                  <span class="icon-button__label">Refresh</span>
+                </button>
+              </div>
+              <ul id="meetingList" class="meeting-list">
+                <li class="meeting-empty">No meetings loaded yet.</li>
+              </ul>
+            </section>
+          </section>
+
+          <!-- Step: in meeting -->
+          <section class="step-card control-step" data-step="meeting" hidden>
+            <div class="meeting-heading">
+              <div>
+                <p class="step-kicker" id="meetingStatusKicker">Connecting…</p>
+                <h2 id="meetingTitle">Meeting</h2>
+              </div>
+            </div>
+
+            <div class="video-stage" id="videoStage">
+              <video
+                id="remoteVideo"
+                class="video-remote"
+                autoplay
+                playsinline
+              ></video>
+              <video
+                id="remoteShare"
+                class="video-share"
+                autoplay
+                playsinline
+                hidden
+              ></video>
+              <video
+                id="localVideo"
+                class="video-local"
+                autoplay
+                playsinline
+                muted
+              ></video>
+              <audio id="remoteAudio" autoplay></audio>
+              <div class="video-placeholder" id="videoPlaceholder">
+                <span class="icon icon-meetings-presence-active-regular" aria-hidden="true"></span>
+                <p>Waiting for meeting media…</p>
+              </div>
+            </div>
+
+            <div class="meeting-controls">
+              <button
+                id="toggleAudioBtn"
+                type="button"
+                class="control-pill"
+                aria-pressed="false"
+              >
+                <span class="icon icon-microphone-on-regular" aria-hidden="true"></span>
+                <span class="control-pill__label">Mute</span>
+              </button>
+              <button
+                id="toggleVideoBtn"
+                type="button"
+                class="control-pill"
+                aria-pressed="false"
+              >
+                <span class="icon icon-camera-on-regular" aria-hidden="true"></span>
+                <span class="control-pill__label">Stop video</span>
+              </button>
+              <button id="leaveBtn" type="button" class="control-pill control-pill--danger">
+                <span class="icon icon-cancel-regular" aria-hidden="true"></span>
+                <span class="control-pill__label">Leave</span>
+              </button>
+            </div>
+
+            <section class="control-section cast-panel" aria-label="Cast to a Chromecast">
+              <div class="section-heading">
+                <h3>Cast to a screen</h3>
+                <span id="castStatusText" class="cast-status">Looking for devices…</span>
+              </div>
+              <div class="cast-actions">
+                <google-cast-launcher class="cast-launcher"></google-cast-launcher>
+                <button
+                  id="castBtn"
+                  type="button"
+                  class="icon-button icon-button--with-label secondary-button"
+                >
+                  <span class="icon icon-screen-share-regular" aria-hidden="true"></span>
+                  <span class="icon-button__label">Cast to TV</span>
+                </button>
+                <button id="stopCastBtn" type="button" class="secondary-button" hidden>
+                  Stop casting
+                </button>
+              </div>
+              <small id="receiverStatus" class="cast-receiver-status" hidden></small>
+            </section>
+          </section>
+
+          <!-- Step: error -->
+          <section class="step-card" data-step="error" hidden>
+            <h2>Something went wrong</h2>
+            <p id="errorMessage">An unexpected error occurred.</p>
+            <div class="step-actions">
+              <button id="errorRetryBtn" type="button" class="secondary-button">
+                Try again
+              </button>
+            </div>
+          </section>
+        </div>
+      </div>
+    </main>
+
+    <script type="module" src="scripts/main.js"></script>
+  </body>
+</html>

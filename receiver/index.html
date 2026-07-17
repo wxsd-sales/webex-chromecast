@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@momentum-design/icons@0.54.0/dist/data/MomentumFontIcons.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@momentum-design/tokens@0.10.4/dist/css/theme/webex/dark-stable.css"
+    />
+    <title>Webex Meeting Cast Receiver</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script
+      type="text/javascript"
+      src="//www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"
+    ></script>
+    <script crossorigin src="https://cdn.jsdelivr.net/npm/webex/umd/webex.min.js"></script>
+  </head>
+  <body class="mds-theme-stable-darkWebex">
+    <div class="stage">
+      <video id="remoteVideo" class="video-remote" autoplay playsinline></video>
+      <video id="remoteShare" class="video-share" autoplay playsinline hidden></video>
+      <audio id="remoteAudio" autoplay></audio>
+
+      <div class="overlay" id="overlay">
+        <span class="icon icon-webex-helix-regular overlay__logo" aria-hidden="true"></span>
+        <h1 class="overlay__title" id="overlayTitle">Webex Meeting Cast</h1>
+        <p class="overlay__status" id="overlayStatus">Ready to cast</p>
+        <div class="overlay__spinner" id="overlaySpinner" hidden></div>
+      </div>
+    </div>
+
+    <script src="scripts/receiver.js"></script>
+  </body>
+</html>
