@@ -11,6 +11,7 @@ const CONFIG = {
     "spark:all",
     "spark:kms",
     "meeting:schedules_read",
+    "meeting:preferences_read"
   ],
   storagePrefix: "webex-chromecast",
   hashDeviceKey: "meeting",

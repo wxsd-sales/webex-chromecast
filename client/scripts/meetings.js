@@ -215,19 +215,23 @@ class MeetingsClient {
     await this.register();
 
     if (type === "PERSONAL_ROOM") {
-      destination = this.#webex.internal.device.userId;
-    }
-
-    if (!destination || typeof destination !== "string" || !destination.trim()) {
+      // Must be left empty: the SDK then resolves the signed-in user's own
+      // {userId, orgId} itself. Passing a raw user id makes it try a Hydra
+      // people lookup (HTTP 400), after which the join request is malformed.
+      destination = undefined;
+    } else if (
+      !destination ||
+      typeof destination !== "string" ||
+      !destination.trim()
+    ) {
       throw new Error("A meeting destination is required.");
+    } else {
+      destination = destination.trim();
     }
 
-    this.#emit("joining", { destination });
+    this.#emit("joining", { destination, type });
 
-    this.#meeting = await this.#webex.meetings.create(
-      destination.trim(),
-      type,
-    );
+    this.#meeting = await this.#webex.meetings.create(destination, type);
     this.#bindMediaReady();
     this.#bindMeetingLifecycle();
 
@@ -252,7 +256,7 @@ class MeetingsClient {
     });
 
     this.#joined = true;
-    this.#emit("joined", { destination });
+    this.#emit("joined", { destination, type });
 
     return this.#meeting;
   }
