@@ -1,3 +1,4 @@
+import { isVerboseDebug } from "./debug-console.js";
 import OAuth, { isHostedWebApp } from "./oauth.js";
 import Webex from "./webex.js";
 import MeetingsClient from "./meetings.js";

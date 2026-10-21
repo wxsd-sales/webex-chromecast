@@ -9,6 +9,8 @@
  * simple `media:ready` event surface can be used to wire up remote streams.
  */
 
+import { isVerboseDebug } from "./debug-console.js";
+
 const DEFAULT_MEDIA_SETTINGS = {
   receiveAudio: true,
   receiveVideo: true,
@@ -85,6 +87,7 @@ class MeetingsClient {
   }
 
   #emit(type, detail = {}) {
+    console.log(`[meeting] ${type}`, detail);
     this.#onEvent({ type, ...detail });
   }
 
@@ -96,6 +99,7 @@ class MeetingsClient {
 
     this.#webex = window.Webex.init({
       credentials: { access_token: this.accessToken },
+      ...(isVerboseDebug() && { config: { logger: { level: "debug" } } }),
     });
 
     // The SDK only wires up its internal metrics/logging in its `ready`

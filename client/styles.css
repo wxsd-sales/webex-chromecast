@@ -571,3 +571,88 @@ h2 {
     min-width: 90px;
   }
 }
+
+/* In-page debug console (see scripts/debug-console.js) */
+.debug-toggle {
+  position: fixed;
+  left: 12px;
+  bottom: 12px;
+  z-index: 1000;
+  min-height: 32px;
+  padding: 4px 12px;
+  border: 1px solid var(--app-border);
+  border-radius: 999px;
+  background: var(--app-surface);
+  color: var(--app-text-secondary);
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.debug-panel {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+  height: 60vh;
+  border-top: 1px solid var(--app-border);
+  background: var(--app-surface);
+  color: var(--app-text);
+}
+
+.debug-panel[hidden] {
+  display: none;
+}
+
+.debug-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--app-border);
+}
+
+.debug-btn {
+  min-height: 32px;
+  padding: 4px 12px;
+  border: 1px solid var(--app-border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--app-text);
+  font-size: 13px;
+}
+
+.debug-status {
+  color: var(--app-text-secondary);
+  font-size: 12px;
+}
+
+.debug-log {
+  flex: 1;
+  overflow: auto;
+  padding: 8px 12px;
+  font: 11px/1.4 ui-monospace, Menlo, monospace;
+}
+
+.debug-row {
+  padding: 2px 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.debug-row--error {
+  color: var(--app-danger);
+}
+
+.debug-row--warn {
+  color: var(--app-warning);
+}
+
+.debug-fallback {
+  width: 100%;
+  height: 100%;
+  font: inherit;
+  background: var(--app-surface);
+  color: var(--app-text);
+}
