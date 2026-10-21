@@ -86,12 +86,21 @@
       </div>
       <div class="app-header__actions">
         <span id="castStatePill" class="state-pill" hidden></span>
-        <google-cast-launcher
-          id="headerCastLauncher"
-          class="cast-launcher"
+        <button
+          id="headerCastBtn"
+          type="button"
+          class="header-cast"
           title="Choose a Chromecast"
+          aria-label="Choose a Chromecast"
           hidden
-        ></google-cast-launcher>
+        >
+          <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+            <path
+              fill="currentColor"
+              d="M21 3H3a2 2 0 0 0-2 2v3h2V5h18v14h-7v2h7a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2ZM1 18v3h3a3 3 0 0 0-3-3Zm0-4v2a5 5 0 0 1 5 5h2a7 7 0 0 0-7-7Zm0-4v2a9 9 0 0 1 9 9h2a11 11 0 0 0-11-11Z"
+            />
+          </svg>
+        </button>
         <button id="signOutBtn" type="button" class="secondary-button" hidden>
           Sign out
         </button>

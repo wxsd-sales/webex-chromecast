@@ -46,7 +46,7 @@ function collectDom() {
   return {
     signInBtn: document.querySelector("#signInBtn"),
     signOutBtn: document.querySelector("#signOutBtn"),
-    headerCastLauncher: document.querySelector("#headerCastLauncher"),
+    headerCastBtn: document.querySelector("#headerCastBtn"),
     signinMessage: document.querySelector("#signinMessage"),
     loadingMessage: document.querySelector("#loadingMessage"),
     joinForm: document.querySelector("#joinForm"),
@@ -113,6 +113,7 @@ function bindUiEvents() {
   app.dom.toggleVideoBtn?.addEventListener("click", toggleVideo);
   app.dom.leaveBtn?.addEventListener("click", leaveMeeting);
   app.dom.castBtn?.addEventListener("click", requestCast);
+  app.dom.headerCastBtn?.addEventListener("click", requestCast);
   app.dom.stopCastBtn?.addEventListener("click", stopCast);
   app.dom.errorRetryBtn?.addEventListener("click", () => {
     if (app.oauthCredentials) {
@@ -610,9 +611,13 @@ function castCurrentMeeting() {
 }
 
 async function requestCast() {
-  if (!app.castSender) {
+  if (!app.castSender?.available) {
+    setReceiverStatus("Cast isn't available in this browser yet.");
     return;
   }
+
+  // Always allowed, even while the state is NO_DEVICES_AVAILABLE: Chrome on
+  // Android only starts actively scanning for devices once the picker opens.
 
   try {
     await app.castSender.requestSession();
@@ -637,7 +642,7 @@ function updateCastUi() {
 
   const labels = {
     UNSUPPORTED: "Casting not supported in this browser",
-    NO_DEVICES_AVAILABLE: "No Chromecast devices found",
+    NO_DEVICES_AVAILABLE: "Tap Cast to search for Chromecasts",
     NOT_CONNECTED: "Chromecast available",
     CONNECTING: "Connecting to Chromecast…",
     CONNECTED: "Casting to Chromecast",
@@ -661,13 +666,17 @@ function updateCastUi() {
   }
 
   if (app.dom.castBtn) {
-    app.dom.castBtn.disabled =
-      !supported || state === "NO_DEVICES_AVAILABLE" || connected;
+    app.dom.castBtn.disabled = !supported || connected;
     app.dom.castBtn.hidden = connected;
   }
 
   if (app.dom.stopCastBtn) {
     app.dom.stopCastBtn.hidden = !connected;
+  }
+
+  if (app.dom.headerCastBtn) {
+    app.dom.headerCastBtn.disabled = !supported;
+    app.dom.headerCastBtn.classList.toggle("header-cast--active", connected);
   }
 }
 
@@ -685,8 +694,8 @@ function setStep(step) {
   }
 
   // The header Cast icon lets the user pick a Chromecast before joining.
-  if (app.dom.headerCastLauncher) {
-    app.dom.headerCastLauncher.hidden = !app.oauthCredentials;
+  if (app.dom.headerCastBtn) {
+    app.dom.headerCastBtn.hidden = !app.oauthCredentials;
   }
 }
 

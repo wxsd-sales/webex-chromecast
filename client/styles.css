@@ -679,3 +679,29 @@ h2 {
   border-color: var(--app-accent);
   color: var(--app-button-primary-text);
 }
+
+/* Header Cast button: always tappable so Chrome starts scanning for devices. */
+.header-cast {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--app-text-secondary);
+}
+
+.header-cast[hidden] {
+  display: none;
+}
+
+.header-cast:hover:not(:disabled) {
+  background: var(--app-button-secondary-hover);
+}
+
+.header-cast--active {
+  color: var(--app-accent-text);
+}
