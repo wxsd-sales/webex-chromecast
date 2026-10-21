@@ -18,6 +18,33 @@ const DEFAULT_MEDIA_SETTINGS = {
   sendShare: false,
 };
 
+const READY_TIMEOUT_MS = 30_000;
+
+/**
+ * Resolve once the Webex SDK instance has finished initializing.
+ * @param {object} webex - Instance returned by Webex.init().
+ */
+function waitForWebexReady(webex) {
+  if (webex.ready) {
+    return Promise.resolve();
+  }
+
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(
+        new Error(
+          "Webex SDK did not become ready. The access token may be invalid, expired, or missing required scopes.",
+        ),
+      );
+    }, READY_TIMEOUT_MS);
+
+    webex.once("ready", () => {
+      clearTimeout(timer);
+      resolve();
+    });
+  });
+}
+
 class MeetingsClient {
   #webex = null;
   #meeting = null;
@@ -71,8 +98,11 @@ class MeetingsClient {
       credentials: { access_token: this.accessToken },
     });
 
-    // `meetings.register()` resolves once the SDK is ready and the device is
-    // registered for meetings, so no separate "ready" wait is required.
+    // The SDK only wires up its internal metrics/logging in its `ready`
+    // handler. Calling meetings.register() earlier throws a misleading
+    // "Cannot read properties of undefined (reading 'internal')" that masks the
+    // real error, so wait for `ready` first.
+    await waitForWebexReady(this.#webex);
     await this.#webex.meetings.register();
     this.#registered = true;
     this.#emit("registered");

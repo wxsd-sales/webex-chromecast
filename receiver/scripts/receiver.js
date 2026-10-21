@@ -160,7 +160,24 @@
         webex = window.Webex.init({
           credentials: { access_token: accessToken },
         });
-        return webex.meetings.register();
+        // The SDK only finishes wiring up internally on `ready`; registering
+        // earlier throws a misleading "reading 'internal'" TypeError.
+        return new Promise(function (resolve, reject) {
+          var timer = setTimeout(function () {
+            reject(new Error("Webex SDK did not become ready (check token/scopes)"));
+          }, 30000);
+          var onReady = function () {
+            clearTimeout(timer);
+            resolve();
+          };
+          if (webex.ready) {
+            onReady();
+          } else {
+            webex.once("ready", onReady);
+          }
+        }).then(function () {
+          return webex.meetings.register();
+        });
       })
       .then(function () {
         // A personal room resolves to the signed-in user's own room.
