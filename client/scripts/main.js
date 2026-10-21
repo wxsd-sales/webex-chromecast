@@ -80,9 +80,18 @@ function bindUiEvents() {
     event.preventDefault();
     const destination = app.dom.joinInput?.value?.trim();
 
-    if (destination) {
-      void joinMeeting(destination, destination);
+    if (!destination) {
+      return;
     }
+
+    if (/^[\d\s-]+$/.test(destination)) {
+      showError(
+        "Meeting numbers can't be joined directly. Enter the meeting's SIP address (e.g. 123456789@yoursite.webex.com) or its Webex meeting link.",
+      );
+      return;
+    }
+
+    void joinMeeting(destination, destination);
   });
   app.dom.refreshMeetingsBtn?.addEventListener("click", () => loadMeetings());
   app.dom.meetingList?.addEventListener("click", (event) => {
@@ -190,8 +199,10 @@ async function startSession() {
       },
       onEvent: handleMeetingEvent,
     });
+    app.registerError = null;
     app.registerPromise = app.meetingsClient.register().catch((error) => {
       console.error("Webex SDK registration failed:", error);
+      app.registerError = error;
     });
 
     await loadMeetings();
@@ -230,13 +241,33 @@ async function loadMeetings() {
   }
 }
 
+/**
+ * The Web SDK's meetings.create() accepts a SIP URI, a meeting link whose path
+ * contains /meet, /m/ or /join, a phone number, or a Hydra id. A bare meeting
+ * number is not accepted, so prefer the SIP address from the REST API.
+ */
+function isSdkMeetingLink(value) {
+  try {
+    const url = new URL(value);
+    return (
+      url.hostname.includes("webex.com") &&
+      /\/(meet|m|join)\b/.test(url.pathname)
+    );
+  } catch {
+    return false;
+  }
+}
+
 function meetingDestination(meeting) {
-  return (
-    meeting.sipAddress ||
-    meeting.meetingNumber ||
-    meeting.webLink ||
-    null
-  );
+  if (meeting.sipAddress) {
+    return meeting.sipAddress;
+  }
+
+  if (meeting.webLink && isSdkMeetingLink(meeting.webLink)) {
+    return meeting.webLink;
+  }
+
+  return null;
 }
 
 function renderMeetings(errorText) {
@@ -350,6 +381,14 @@ async function joinMeeting(destination, title) {
       await app.registerPromise;
     }
 
+    if (app.registerError) {
+      throw new Error(
+        `Webex SDK registration failed (${formatError(app.registerError)}). ` +
+          `Granted scopes: ${app.oauthCredentials?.scopes?.join(" ") || "unknown"}. ` +
+          "The integration needs spark:all and spark:kms.",
+      );
+    }
+
     await app.meetingsClient.joinMeeting(destination);
     setMeetingStatus("In meeting");
 
@@ -358,6 +397,7 @@ async function joinMeeting(destination, title) {
       castCurrentMeeting();
     }
   } catch (error) {
+    console.error("Join failed:", error);
     showError(`Could not join the meeting: ${formatError(error)}`);
   }
 }

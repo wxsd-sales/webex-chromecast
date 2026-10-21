@@ -101,7 +101,7 @@ npm run proxy
 
 ## Demo
 
-Live GitHub Pages Demo: https://wxsd-sales.github.com/webex-chromecast/client
+Live GitHub Pages Demo: https://wxsd-sales.github.io/webex-chromecast/client
 
 _For more demos & PoCs like this, check out our [Webex Labs site](https://collabtoolbox.cisco.com/webex-labs)._
 
