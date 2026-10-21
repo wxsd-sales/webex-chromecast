@@ -7,7 +7,6 @@ import { resolveWebexApiBaseUrl, isLocalDevProxyEnabled } from "./webex-config.j
 import {
   CHROMECAST_RECEIVER_APPLICATION_ID,
   CAST_MESSAGE_TYPES,
-  PERSONAL_ROOM_TYPE,
 } from "./config.js";
 
 const oauth = new OAuth();
@@ -20,7 +19,6 @@ const app = {
   castSender: null,
   meetings: [],
   currentDestination: null,
-  currentType: null,
   currentTitle: null,
   step: "signin",
   audioMuted: false,
@@ -98,7 +96,7 @@ function bindUiEvents() {
     void joinMeeting(destination, destination);
   });
   app.dom.joinPmrBtn?.addEventListener("click", () => {
-    void joinMeeting(null, "My Personal Room", PERSONAL_ROOM_TYPE);
+    void joinPersonalRoom();
   });
   app.dom.refreshMeetingsBtn?.addEventListener("click", () => loadMeetings());
   app.dom.meetingList?.addEventListener("click", (event) => {
@@ -365,8 +363,38 @@ function formatMeetingTime(meeting) {
 
 /* ------------------------------------------------------------- Meeting --- */
 
-async function joinMeeting(destination, title, type = null) {
-  if (!destination && !type) {
+async function joinPersonalRoom() {
+  if (!app.webex) {
+    return;
+  }
+
+  if (!app.oauthCredentials?.scopes?.includes("meeting:preferences_read")) {
+    showError(
+      "Joining your Personal Room needs the meeting:preferences_read permission. Sign out and sign in again to grant it (the Webex integration must also have this scope enabled).",
+    );
+    return;
+  }
+
+  try {
+    const pmr = await app.webex.getPersonalMeetingRoom();
+    // Log field names only: the response includes the host PIN.
+    console.log("[pmr] fields:", Object.keys(pmr || {}).join(", "));
+
+    const destination = pmr?.sipAddress || pmr?.personalMeetingRoomLink;
+
+    if (!destination) {
+      throw new Error("Webex returned no Personal Room link.");
+    }
+
+    await joinMeeting(destination, pmr.topic || "My Personal Room");
+  } catch (error) {
+    console.error("Personal Room lookup failed:", error);
+    showError(`Could not find your Personal Room: ${formatError(error)}`);
+  }
+}
+
+async function joinMeeting(destination, title) {
+  if (!destination) {
     return;
   }
 
@@ -376,7 +404,6 @@ async function joinMeeting(destination, title, type = null) {
   }
 
   app.currentDestination = destination;
-  app.currentType = type;
   app.currentTitle = title || "Webex meeting";
 
   setStep("meeting");
@@ -397,7 +424,7 @@ async function joinMeeting(destination, title, type = null) {
       );
     }
 
-    await app.meetingsClient.joinMeeting(destination, type);
+    await app.meetingsClient.joinMeeting(destination);
     setMeetingStatus("In meeting");
 
     // If a Chromecast session is already connected, bring it into the meeting.
@@ -428,7 +455,6 @@ async function teardownMeeting() {
   }
 
   app.currentDestination = null;
-  app.currentType = null;
   app.currentTitle = null;
   app.audioMuted = false;
   app.videoMuted = false;
@@ -534,7 +560,7 @@ function handleCastStateChange(state) {
 function handleCastSessionChange(sessionState) {
   if (sessionState === "SESSION_STARTED" || sessionState === "SESSION_RESUMED") {
     // A device connected — if we're in a meeting, push it to the TV.
-    if (app.currentDestination || app.currentType) {
+    if (app.currentDestination) {
       castCurrentMeeting();
     }
   }
@@ -556,7 +582,7 @@ function handleReceiverMessage(message) {
 }
 
 function castCurrentMeeting() {
-  if (!app.castSender?.isConnected() || !(app.currentDestination || app.currentType)) {
+  if (!app.castSender?.isConnected() || !app.currentDestination) {
     return;
   }
 
@@ -567,7 +593,6 @@ function castCurrentMeeting() {
     .sendMessage({
       type: CAST_MESSAGE_TYPES.JOIN_MEETING,
       destination: app.currentDestination,
-      destinationType: app.currentType,
       title: app.currentTitle,
       accessToken: app.oauthCredentials?.accessToken,
     })

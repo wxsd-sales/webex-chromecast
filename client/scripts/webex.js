@@ -63,6 +63,20 @@ class Webex {
   }
 
   /**
+   * Get the signed-in user's Personal Meeting Room details.
+   * Requires the `meeting:preferences_read` scope.
+   * @param {?string} siteUrl - Optional Webex site (e.g. "example.webex.com");
+   *   defaults to the user's default site.
+   * @returns {Promise<object>} PMR record (includes personalMeetingRoomLink).
+   */
+  async getPersonalMeetingRoom(siteUrl = null) {
+    return this.#http.getJson(
+      "/meetingPreferences/personalMeetingRoom",
+      siteUrl ? { siteUrl } : {},
+    );
+  }
+
+  /**
    * Fetch a single meeting by id.
    * @param {string} meetingId - Webex meeting id.
    * @returns {Promise<object>} Webex meeting record.

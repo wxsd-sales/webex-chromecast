@@ -206,32 +206,23 @@ class MeetingsClient {
 
   /**
    * Join a meeting and publish/receive media.
-   * @param {?string} destination - SIP address or meeting link. Ignored for
-   *   PERSONAL_ROOM, which resolves to the signed-in user's own room.
-   * @param {?string} [type] - Optional SDK destination type, e.g. "PERSONAL_ROOM".
+   * @param {string} destination - SIP address or meeting link.
    * @returns {Promise<object>} The joined meeting instance.
    */
-  async joinMeeting(destination, type = null) {
-    await this.register();
-
-    if (type === "PERSONAL_ROOM") {
-      // Must be left empty: the SDK then resolves the signed-in user's own
-      // {userId, orgId} itself. Passing a raw user id makes it try a Hydra
-      // people lookup (HTTP 400), after which the join request is malformed.
-      destination = undefined;
-    } else if (
-      !destination ||
-      typeof destination !== "string" ||
-      !destination.trim()
-    ) {
+  async joinMeeting(destination) {
+    if (!destination || typeof destination !== "string" || !destination.trim()) {
       throw new Error("A meeting destination is required.");
-    } else {
-      destination = destination.trim();
     }
 
-    this.#emit("joining", { destination, type });
+    await this.register();
 
-    this.#meeting = await this.#webex.meetings.create(destination, type);
+    this.#emit("joining", { destination });
+
+    // NOTE: don't use the SDK's PERSONAL_ROOM destination type. In 3.12 it
+    // re-resolves the already-resolved {userId, orgId} through a Hydra people
+    // lookup (HTTP 400) and then sends a malformed join. Use the PMR's link or
+    // SIP address instead (see joinPersonalRoom in main.js).
+    this.#meeting = await this.#webex.meetings.create(destination.trim());
     this.#bindMediaReady();
     this.#bindMeetingLifecycle();
 
@@ -256,7 +247,7 @@ class MeetingsClient {
     });
 
     this.#joined = true;
-    this.#emit("joined", { destination, type });
+    this.#emit("joined", { destination });
 
     return this.#meeting;
   }
