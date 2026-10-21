@@ -6,6 +6,7 @@ import { resolveWebexApiBaseUrl, isLocalDevProxyEnabled } from "./webex-config.j
 import {
   CHROMECAST_RECEIVER_APPLICATION_ID,
   CAST_MESSAGE_TYPES,
+  PERSONAL_ROOM_TYPE,
 } from "./config.js";
 
 const oauth = new OAuth();
@@ -18,6 +19,7 @@ const app = {
   castSender: null,
   meetings: [],
   currentDestination: null,
+  currentType: null,
   currentTitle: null,
   step: "signin",
   audioMuted: false,
@@ -49,6 +51,7 @@ function collectDom() {
     loadingMessage: document.querySelector("#loadingMessage"),
     joinForm: document.querySelector("#joinForm"),
     joinInput: document.querySelector("#joinInput"),
+    joinPmrBtn: document.querySelector("#joinPmrBtn"),
     refreshMeetingsBtn: document.querySelector("#refreshMeetingsBtn"),
     meetingList: document.querySelector("#meetingList"),
     meetingTitle: document.querySelector("#meetingTitle"),
@@ -92,6 +95,9 @@ function bindUiEvents() {
     }
 
     void joinMeeting(destination, destination);
+  });
+  app.dom.joinPmrBtn?.addEventListener("click", () => {
+    void joinMeeting(null, "My Personal Room", PERSONAL_ROOM_TYPE);
   });
   app.dom.refreshMeetingsBtn?.addEventListener("click", () => loadMeetings());
   app.dom.meetingList?.addEventListener("click", (event) => {
@@ -358,8 +364,8 @@ function formatMeetingTime(meeting) {
 
 /* ------------------------------------------------------------- Meeting --- */
 
-async function joinMeeting(destination, title) {
-  if (!destination) {
+async function joinMeeting(destination, title, type = null) {
+  if (!destination && !type) {
     return;
   }
 
@@ -369,6 +375,7 @@ async function joinMeeting(destination, title) {
   }
 
   app.currentDestination = destination;
+  app.currentType = type;
   app.currentTitle = title || "Webex meeting";
 
   setStep("meeting");
@@ -389,7 +396,7 @@ async function joinMeeting(destination, title) {
       );
     }
 
-    await app.meetingsClient.joinMeeting(destination);
+    await app.meetingsClient.joinMeeting(destination, type);
     setMeetingStatus("In meeting");
 
     // If a Chromecast session is already connected, bring it into the meeting.
@@ -420,6 +427,7 @@ async function teardownMeeting() {
   }
 
   app.currentDestination = null;
+  app.currentType = null;
   app.currentTitle = null;
   app.audioMuted = false;
   app.videoMuted = false;
@@ -525,7 +533,7 @@ function handleCastStateChange(state) {
 function handleCastSessionChange(sessionState) {
   if (sessionState === "SESSION_STARTED" || sessionState === "SESSION_RESUMED") {
     // A device connected — if we're in a meeting, push it to the TV.
-    if (app.currentDestination) {
+    if (app.currentDestination || app.currentType) {
       castCurrentMeeting();
     }
   }
@@ -547,7 +555,7 @@ function handleReceiverMessage(message) {
 }
 
 function castCurrentMeeting() {
-  if (!app.castSender?.isConnected() || !app.currentDestination) {
+  if (!app.castSender?.isConnected() || !(app.currentDestination || app.currentType)) {
     return;
   }
 
@@ -558,6 +566,7 @@ function castCurrentMeeting() {
     .sendMessage({
       type: CAST_MESSAGE_TYPES.JOIN_MEETING,
       destination: app.currentDestination,
+      destinationType: app.currentType,
       title: app.currentTitle,
       accessToken: app.oauthCredentials?.accessToken,
     })

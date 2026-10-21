@@ -17,6 +17,12 @@ export const CHROMECAST_RECEIVER_APPLICATION_ID = "4103BEBF";
 export const CAST_NAMESPACE = "urn:x-cast:com.cisco.wxsd.webex-chromecast";
 
 /**
+ * Destination type understood by the Webex Web SDK for joining the signed-in
+ * user's own Personal Meeting Room (resolved from the SDK's registered user id).
+ */
+export const PERSONAL_ROOM_TYPE = "PERSONAL_ROOM";
+
+/**
  * Message types exchanged over CAST_NAMESPACE.
  */
 export const CAST_MESSAGE_TYPES = {

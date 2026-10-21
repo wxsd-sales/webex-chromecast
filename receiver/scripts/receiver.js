@@ -135,7 +135,9 @@
     var destination = payload && payload.destination;
     var accessToken = payload && payload.accessToken;
 
-    if (!destination || !accessToken) {
+    var destinationType = (payload && payload.destinationType) || null;
+
+    if ((!destination && !destinationType) || !accessToken) {
       setStatus("Missing meeting details from sender");
       broadcastStatus("error", "Missing meeting details");
       return;
@@ -161,6 +163,13 @@
         return webex.meetings.register();
       })
       .then(function () {
+        // A personal room resolves to the signed-in user's own room.
+        if (destinationType === "PERSONAL_ROOM") {
+          return webex.meetings.create(
+            webex.internal.device.userId,
+            destinationType,
+          );
+        }
         return webex.meetings.create(destination);
       })
       .then(function (createdMeeting) {

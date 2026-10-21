@@ -172,19 +172,28 @@ class MeetingsClient {
 
   /**
    * Join a meeting and publish/receive media.
-   * @param {string} destination - SIP address, meeting number, meeting link, or email.
+   * @param {?string} destination - SIP address or meeting link. Ignored for
+   *   PERSONAL_ROOM, which resolves to the signed-in user's own room.
+   * @param {?string} [type] - Optional SDK destination type, e.g. "PERSONAL_ROOM".
    * @returns {Promise<object>} The joined meeting instance.
    */
-  async joinMeeting(destination) {
+  async joinMeeting(destination, type = null) {
+    await this.register();
+
+    if (type === "PERSONAL_ROOM") {
+      destination = this.#webex.internal.device.userId;
+    }
+
     if (!destination || typeof destination !== "string" || !destination.trim()) {
       throw new Error("A meeting destination is required.");
     }
 
-    await this.register();
-
     this.#emit("joining", { destination });
 
-    this.#meeting = await this.#webex.meetings.create(destination.trim());
+    this.#meeting = await this.#webex.meetings.create(
+      destination.trim(),
+      type,
+    );
     this.#bindMediaReady();
     this.#bindMeetingLifecycle();
 
