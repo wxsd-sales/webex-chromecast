@@ -9,6 +9,32 @@
  */
 export const CHROMECAST_RECEIVER_APPLICATION_ID = "4103BEBF";
 
+/** Google's Default Media Receiver. Any Chromecast on the LAN can use it. */
+const DEFAULT_MEDIA_RECEIVER_APP_ID = "CC1AD845";
+
+/**
+ * Receiver application id to use for discovery. For debugging, add
+ * `?castApp=default` (Default Media Receiver) or `?castApp=<APPID>` to the URL.
+ *
+ * With the default receiver every Chromecast on the network is listed. If
+ * devices show up with it but not with the custom id, the custom receiver (or
+ * the device registration in the Cast Developer Console) is the problem; if no
+ * devices show up with either, it's discovery (network/browser/profile).
+ */
+export function resolveReceiverApplicationId() {
+  const override = new URLSearchParams(window.location.search).get("castApp");
+
+  if (override === "default") {
+    return DEFAULT_MEDIA_RECEIVER_APP_ID;
+  }
+
+  if (override && /^[0-9A-F]{8}$/i.test(override)) {
+    return override.toUpperCase();
+  }
+
+  return CHROMECAST_RECEIVER_APPLICATION_ID;
+}
+
 /**
  * Custom Cast message namespace used to exchange meeting-join instructions and
  * status updates between this sender app and the custom receiver. Cast requires

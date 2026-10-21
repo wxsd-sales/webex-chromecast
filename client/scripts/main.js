@@ -5,7 +5,7 @@ import MeetingsClient from "./meetings.js";
 import CastSender from "./cast-sender.js";
 import { resolveWebexApiBaseUrl, isLocalDevProxyEnabled } from "./webex-config.js";
 import {
-  CHROMECAST_RECEIVER_APPLICATION_ID,
+  resolveReceiverApplicationId,
   CAST_MESSAGE_TYPES,
 } from "./config.js";
 
@@ -46,6 +46,7 @@ function collectDom() {
   return {
     signInBtn: document.querySelector("#signInBtn"),
     signOutBtn: document.querySelector("#signOutBtn"),
+    headerCastLauncher: document.querySelector("#headerCastLauncher"),
     signinMessage: document.querySelector("#signinMessage"),
     loadingMessage: document.querySelector("#loadingMessage"),
     joinForm: document.querySelector("#joinForm"),
@@ -424,15 +425,23 @@ async function joinMeeting(destination, title) {
       );
     }
 
-    await app.meetingsClient.joinMeeting(destination);
-    setMeetingStatus("In meeting");
-
-    // If a Chromecast session is already connected, bring it into the meeting.
+    // If a Chromecast was pre-selected (header Cast icon), have it join the
+    // meeting at the same time as this browser.
     if (app.castSender?.isConnected()) {
       castCurrentMeeting();
     }
+
+    await app.meetingsClient.joinMeeting(destination);
+    setMeetingStatus("In meeting");
   } catch (error) {
     console.error("Join failed:", error);
+
+    if (app.castSender?.isConnected()) {
+      app.castSender
+        .sendMessage({ type: CAST_MESSAGE_TYPES.LEAVE_MEETING })
+        .catch(() => {});
+    }
+
     showError(`Could not join the meeting: ${formatError(error)}`);
   }
 }
@@ -533,20 +542,18 @@ async function toggleVideo() {
 async function initializeCast() {
   try {
     app.castSender = new CastSender({
-      applicationId: CHROMECAST_RECEIVER_APPLICATION_ID,
+      applicationId: resolveReceiverApplicationId(),
       onStateChange: handleCastStateChange,
       onSessionChange: handleCastSessionChange,
       onReceiverMessage: handleReceiverMessage,
     });
 
-    const available = await app.castSender.init();
-
-    if (!available) {
-      app.castSender = null;
-      updateCastUi();
-    }
+    // The sender stays in place even if the framework loads late; the UI
+    // follows its `available` flag via onStateChange.
+    await app.castSender.init();
+    updateCastUi();
   } catch (error) {
-    console.error("Cast unavailable:", error);
+    console.error("[cast] unavailable:", error);
     app.castSender = null;
     updateCastUi();
   }
@@ -624,7 +631,7 @@ async function stopCast() {
 }
 
 function updateCastUi() {
-  const supported = Boolean(app.castSender);
+  const supported = Boolean(app.castSender?.available);
   const state = supported ? app.castState : "UNSUPPORTED";
   const connected = supported && app.castSender.isConnected();
 
@@ -675,6 +682,11 @@ function setStep(step) {
 
   if (app.dom.signOutBtn) {
     app.dom.signOutBtn.hidden = !app.oauthCredentials;
+  }
+
+  // The header Cast icon lets the user pick a Chromecast before joining.
+  if (app.dom.headerCastLauncher) {
+    app.dom.headerCastLauncher.hidden = !app.oauthCredentials;
   }
 }
 

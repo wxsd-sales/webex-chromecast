@@ -12,6 +12,43 @@ const MAX_ENTRIES = 500;
 const entries = [];
 let panel = null;
 let logEl = null;
+let statusEl = null;
+let activeFilter = "all";
+
+const FILTERS = [
+  { id: "all", label: "All" },
+  { id: "webex", label: "Webex" },
+  { id: "cast", label: "Cast" },
+  { id: "errors", label: "Errors" },
+];
+
+/** Which area a log line belongs to, from its text. */
+function classify(message) {
+  if (
+    /^\[cast\]/i.test(message) ||
+    /gstatic\.com\/cast|cast_sender|cast_framework|chrome\.cast|\bcast\./i.test(message)
+  ) {
+    return "cast";
+  }
+
+  if (/^(wx-js-sdk|\[meeting\]|\[pmr\])|webex\.min\.js|webexapis|wbx2\.com/i.test(message)) {
+    return "webex";
+  }
+
+  return "app";
+}
+
+function matchesFilter(entry) {
+  if (activeFilter === "all") {
+    return true;
+  }
+
+  if (activeFilter === "errors") {
+    return entry.level === "error" || entry.level === "warn";
+  }
+
+  return entry.area === activeFilter;
+}
 
 export function isVerboseDebug() {
   return new URLSearchParams(window.location.search).get("debug") === "1";
@@ -44,13 +81,13 @@ function record(level, args) {
   const time = new Date().toISOString().slice(11, 23);
   const message = redact(args.map(stringify).join(" "));
 
-  entries.push({ time, level, message });
+  entries.push({ time, level, message, area: classify(message) });
 
   if (entries.length > MAX_ENTRIES) {
     entries.shift();
   }
 
-  if (logEl) {
+  if (logEl && matchesFilter(entries[entries.length - 1])) {
     appendRow(entries[entries.length - 1]);
   }
 }
@@ -62,14 +99,29 @@ function formatAll() {
     "",
   ];
 
+  header.push(`Filter: ${activeFilter}`, "");
+
   return header
-    .concat(entries.map((e) => `${e.time} [${e.level}] ${e.message}`))
+    .concat(
+      entries
+        .filter(matchesFilter)
+        .map((e) => `${e.time} [${e.level}] ${e.message}`),
+    )
     .join("\n");
+}
+
+function renderLog() {
+  logEl.replaceChildren();
+  entries.filter(matchesFilter).forEach(appendRow);
+
+  if (statusEl) {
+    statusEl.textContent = "";
+  }
 }
 
 function appendRow(entry) {
   const row = document.createElement("div");
-  row.className = `debug-row debug-row--${entry.level}`;
+  row.className = `debug-row debug-row--${entry.level} debug-row--${entry.area}`;
   row.textContent = `${entry.time} ${entry.message}`;
   logEl.appendChild(row);
   logEl.scrollTop = logEl.scrollHeight;
@@ -138,6 +190,7 @@ function buildPanel() {
 
   const status = document.createElement("span");
   status.className = "debug-status";
+  statusEl = status;
 
   const makeButton = (label, onClick) => {
     const button = document.createElement("button");
@@ -152,8 +205,7 @@ function buildPanel() {
     makeButton("Share / copy", () => shareLog(status)),
     makeButton("Clear", () => {
       entries.length = 0;
-      logEl.replaceChildren();
-      status.textContent = "";
+      renderLog();
     }),
     makeButton("Close", () => {
       panel.hidden = true;
@@ -161,17 +213,38 @@ function buildPanel() {
     status,
   );
 
+  const filterBar = document.createElement("div");
+  filterBar.className = "debug-filters";
+
+  for (const { id, label } of FILTERS) {
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = "debug-chip";
+    chip.textContent = label;
+    chip.dataset.filter = id;
+    chip.setAttribute("aria-pressed", String(id === activeFilter));
+    chip.addEventListener("click", () => {
+      activeFilter = id;
+      filterBar
+        .querySelectorAll(".debug-chip")
+        .forEach((el) =>
+          el.setAttribute("aria-pressed", String(el.dataset.filter === id)),
+        );
+      renderLog();
+    });
+    filterBar.append(chip);
+  }
+
   logEl = document.createElement("div");
   logEl.className = "debug-log";
 
-  panel.append(bar, logEl);
+  panel.append(bar, filterBar, logEl);
 
   toggle.addEventListener("click", () => {
     panel.hidden = !panel.hidden;
 
     if (!panel.hidden) {
-      logEl.replaceChildren();
-      entries.forEach(appendRow);
+      renderLog();
     }
   });
 

@@ -656,3 +656,26 @@ h2 {
   background: var(--app-surface);
   color: var(--app-text);
 }
+
+.debug-filters {
+  display: flex;
+  gap: 8px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--app-border);
+}
+
+.debug-chip {
+  min-height: 28px;
+  padding: 2px 12px;
+  border: 1px solid var(--app-border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--app-text-secondary);
+  font-size: 12px;
+}
+
+.debug-chip[aria-pressed="true"] {
+  background: var(--app-accent);
+  border-color: var(--app-accent);
+  color: var(--app-button-primary-text);
+}

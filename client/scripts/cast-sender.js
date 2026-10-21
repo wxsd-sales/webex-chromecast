@@ -48,42 +48,79 @@ class CastSender {
   }
 
   /**
-   * Initialize the Cast framework. Resolves once the framework is available
-   * (or immediately reports unavailable if the browser has no Cast support).
+   * Initialize the Cast framework. Resolves once the framework is available,
+   * or false after a timeout. If the framework loads later than the timeout it
+   * is still initialized and `onStateChange` reports the new state.
    * @returns {Promise<boolean>} Whether the Cast framework became available.
    */
   init() {
+    this.#logEnvironment();
+
     return new Promise((resolve) => {
-      const start = () => {
+      let settled = false;
+
+      const finish = (value) => {
+        if (!settled) {
+          settled = true;
+          resolve(value);
+        }
+      };
+
+      const handle = (result) => {
+        if (this.#ready) {
+          return;
+        }
+
+        if (!result?.isAvailable) {
+          console.warn(
+            `[cast] Cast framework unavailable (reason: ${result?.reason || "unknown"}). Browser may not support Cast.`,
+          );
+          finish(false);
+          return;
+        }
+
         try {
           this.#initializeContext();
-          resolve(true);
+          finish(true);
         } catch (error) {
-          console.error("Cast initialization failed:", error);
-          resolve(false);
+          console.error("[cast] Cast initialization failed:", error);
+          finish(false);
         }
       };
 
-      if (window.cast && window.cast.framework && window.chrome?.cast) {
-        start();
-        return;
+      if (window.__castApiResult) {
+        handle(window.__castApiResult);
+      } else if (window.cast?.framework && window.chrome?.cast) {
+        handle({ isAvailable: true });
+      } else {
+        window.addEventListener("cast-api-ready", () =>
+          handle(window.__castApiResult),
+        );
       }
 
-      window.__onGCastApiAvailable = (isAvailable) => {
-        if (isAvailable) {
-          start();
-        } else {
-          resolve(false);
-        }
-      };
-
-      // If the framework never loads (e.g. non-Chromium browser), resolve false.
       setTimeout(() => {
         if (!this.#ready) {
-          resolve(false);
+          console.warn(
+            "[cast] Cast framework did not load within 15s (cast_sender.js blocked or unsupported browser?).",
+          );
+          finish(false);
         }
-      }, 5_000);
+      }, 15_000);
     });
+  }
+
+  #logEnvironment() {
+    console.log("[cast] receiver application id:", this.#applicationId);
+    console.log(
+      "[cast] environment:",
+      JSON.stringify({
+        secureContext: window.isSecureContext,
+        origin: window.location.origin,
+        online: navigator.onLine,
+        chromium: Boolean(window.chrome),
+        connectionType: navigator.connection?.type || "unknown",
+      }),
+    );
   }
 
   #initializeContext() {
@@ -99,20 +136,50 @@ class CastSender {
 
     this.#context.addEventListener(
       castNs.framework.CastContextEventType.CAST_STATE_CHANGED,
-      (event) => this.#onStateChange(event.castState),
+      (event) => {
+        console.log("[cast] state changed:", event.castState);
+        this.#onStateChange(event.castState);
+      },
     );
 
     this.#context.addEventListener(
       castNs.framework.CastContextEventType.SESSION_STATE_CHANGED,
       (event) => {
+        console.log(
+          "[cast] session state:",
+          event.sessionState,
+          event.errorCode ? `error=${event.errorCode}` : "",
+        );
         this.#onSessionChange(event.sessionState);
         this.#attachSessionMessageListener();
       },
     );
 
     this.#ready = true;
-    this.#onStateChange(this.#context.getCastState());
+
+    const initial = this.#context.getCastState();
+    console.log("[cast] framework ready, initial state:", initial);
+    this.#onStateChange(initial);
     this.#attachSessionMessageListener();
+    this.#watchDiscovery();
+  }
+
+  /** Log a hint if no devices are found after a while. */
+  #watchDiscovery() {
+    const startedAt = Date.now();
+
+    for (const seconds of [5, 15, 30, 60]) {
+      setTimeout(() => {
+        const state = this.getState();
+        console.log(
+          `[cast] ${seconds}s after init: state=${state}${
+            state === "NO_DEVICES_AVAILABLE"
+              ? " (no Chromecast discovered. See ?castApp=default test)"
+              : ""
+          }`,
+        );
+      }, seconds * 1000 - (Date.now() - startedAt));
+    }
   }
 
   #attachSessionMessageListener() {
@@ -168,7 +235,9 @@ class CastSender {
       throw new Error("Cast framework is not available in this browser.");
     }
 
+    console.log("[cast] requesting session (device picker)");
     const errorCode = await this.#context.requestSession();
+    console.log("[cast] requestSession result:", errorCode || "ok");
 
     if (errorCode) {
       throw new Error(`Cast session request failed: ${errorCode}`);
