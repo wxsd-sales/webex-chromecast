@@ -150,6 +150,13 @@ class CastSender {
           event.sessionState,
           event.errorCode ? `error=${event.errorCode}` : "",
         );
+        if (
+          event.sessionState === "SESSION_STARTED" ||
+          event.sessionState === "SESSION_RESUMED"
+        ) {
+          this.#logDevice();
+        }
+
         this.#onSessionChange(event.sessionState);
         this.#attachSessionMessageListener();
       },
@@ -162,6 +169,35 @@ class CastSender {
     this.#onStateChange(initial);
     this.#attachSessionMessageListener();
     this.#watchDiscovery();
+  }
+
+  /**
+   * Log what the Cast SDK exposes about the connected device. This never
+   * includes the hardware serial number (web senders can't read it), but
+   * confirms which device was picked.
+   */
+  #logDevice() {
+    try {
+      const session = this.getSession();
+      const device = session?.getCastDevice?.() || session?.getSessionObj?.()?.receiver;
+
+      if (!device) {
+        console.log("[cast] connected, but no device details exposed");
+        return;
+      }
+
+      const info = {};
+
+      for (const key of Object.keys(device)) {
+        if (typeof device[key] !== "function" && key !== "volume") {
+          info[key] = device[key];
+        }
+      }
+
+      console.log("[cast] connected device:", JSON.stringify(info));
+    } catch (error) {
+      console.warn("[cast] could not read device details:", error);
+    }
   }
 
   /** Log a hint if no devices are found after a while. */
