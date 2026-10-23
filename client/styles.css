@@ -705,3 +705,60 @@ h2 {
 .header-cast--active {
   color: var(--app-accent-text);
 }
+
+/* Chromecast layout + audio controls */
+.option-group {
+  display: grid;
+  gap: 8px;
+}
+
+.option-label {
+  color: var(--app-text-secondary);
+  font-size: 13px;
+}
+
+.segmented {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.segmented button {
+  min-height: 36px;
+  padding: 4px 14px;
+  border: 1px solid var(--app-border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--app-text);
+  font-size: 13px;
+}
+
+.segmented button[aria-pressed="true"] {
+  background: var(--app-accent);
+  border-color: var(--app-accent);
+  color: var(--app-button-primary-text);
+}
+
+.volume-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.volume-row input[type="range"] {
+  flex: 1;
+  min-width: 0;
+}
+
+.option-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: var(--app-text-secondary);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.option-check input {
+  margin-top: 2px;
+}

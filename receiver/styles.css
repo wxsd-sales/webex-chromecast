@@ -26,31 +26,164 @@ body {
   background: #000;
 }
 
-.video-remote,
-.video-share {
+/* ------------------------------------------------------------- Layout ---
+ * Driven by data attributes on .stage (set from receiver.js):
+ *   data-has-share      false -> participants fill the screen
+ *   data-presentation   presentation | pip | top   (when a share is active)
+ *   data-pip            corner for the pip layout
+ *   data-multistream    true -> .tiles is used instead of #remoteVideo
+ *   data-participants   speaker | grid | prominent (multistream, no share)
+ */
+
+.video-share,
+.video-area {
   position: absolute;
+  background: #000;
+}
+
+.video-share {
   inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  z-index: 2;
+}
+
+.video-area {
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.video-remote {
   width: 100%;
   height: 100%;
   object-fit: contain;
   background: #000;
 }
 
-/* Presentation share sits on top; shrink the camera to a corner. */
-.video-share {
-  z-index: 2;
+.tiles {
+  display: none;
+  width: 100%;
+  height: 100%;
+  gap: 6px;
+  padding: 6px;
+  box-sizing: border-box;
 }
 
-.video-share:not([hidden]) ~ .video-remote,
-.stage:has(.video-share:not([hidden])) .video-remote {
+.tile {
+  min-width: 0;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+  background: #111;
+}
+
+.stage[data-multistream="true"] .video-remote {
+  display: none;
+}
+
+.stage[data-multistream="true"] .tiles {
+  display: grid;
+  grid-template-columns: repeat(var(--cols, 1), minmax(0, 1fr));
+  grid-template-rows: repeat(var(--rows, 1), minmax(0, 1fr));
+}
+
+/* Speaker + others: first tile large (2x2), the rest around it. */
+.stage[data-multistream="true"][data-has-share="false"][data-participants="prominent"] .tiles {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+}
+
+.stage[data-multistream="true"][data-has-share="false"][data-participants="prominent"] .tile:first-child {
+  grid-area: 1 / 1 / 3 / 3;
+}
+
+.stage[data-multistream="true"][data-has-share="false"][data-participants="speaker"] .tile {
+  object-fit: contain;
+}
+
+/* Presentation only: hide participants. */
+.stage[data-has-share="true"][data-presentation="presentation"] .video-area {
+  display: none;
+}
+
+/* Picture-in-picture: share fills the screen, speaker in a corner. */
+.stage[data-has-share="true"][data-presentation="pip"] .video-area {
+  inset: auto;
   z-index: 3;
-  inset: auto 3vw 3vw auto;
-  width: 22vw;
-  height: auto;
+  width: 24vw;
   aspect-ratio: 16 / 9;
   border-radius: 12px;
   border: 2px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.stage[data-has-share="true"][data-presentation="pip"] .video-remote {
   object-fit: cover;
+}
+
+.stage[data-has-share="true"][data-presentation="pip"][data-pip="top-left"] .video-area {
+  top: 3vw;
+  left: 3vw;
+}
+
+.stage[data-has-share="true"][data-presentation="pip"][data-pip="top-right"] .video-area {
+  top: 3vw;
+  right: 3vw;
+}
+
+.stage[data-has-share="true"][data-presentation="pip"][data-pip="bottom-left"] .video-area {
+  bottom: 3vw;
+  left: 3vw;
+}
+
+.stage[data-has-share="true"][data-presentation="pip"][data-pip="bottom-right"] .video-area {
+  bottom: 3vw;
+  right: 3vw;
+}
+
+/* In pip only the first (active speaker) tile is shown. */
+.stage[data-has-share="true"][data-presentation="pip"] .tiles {
+  display: block;
+  padding: 0;
+}
+
+.stage[data-has-share="true"][data-presentation="pip"] .tile:not(:first-child) {
+  display: none;
+}
+
+.stage[data-has-share="true"][data-presentation="pip"] .tile {
+  border-radius: 0;
+}
+
+/* Participants on top, presentation below. */
+.stage[data-has-share="true"][data-presentation="top"] .video-area {
+  inset: 0 0 auto 0;
+  height: 28vh;
+}
+
+.stage[data-has-share="true"][data-presentation="top"] .video-share {
+  inset: 28vh 0 0 0;
+  width: 100%;
+  height: 72vh;
+}
+
+/* Multistream filmstrip: a centered row of 16:9 thumbnails. */
+.stage[data-multistream="true"][data-has-share="true"][data-presentation="top"] .tiles {
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  padding: 6px;
+}
+
+.stage[data-multistream="true"][data-has-share="true"][data-presentation="top"] .tile {
+  width: auto;
+  height: 100%;
+  aspect-ratio: 16 / 9;
+  flex: 0 1 auto;
 }
 
 .overlay {

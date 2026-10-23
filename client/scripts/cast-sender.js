@@ -13,6 +13,7 @@ class CastSender {
   #onStateChange;
   #onSessionChange;
   #onReceiverMessage;
+  #onVolumeChange;
   #context = null;
   #ready = false;
   #messageListenerBound = null;
@@ -24,6 +25,7 @@ class CastSender {
    * @param {(state: string) => void} [options.onStateChange] - Cast availability/connection changes.
    * @param {(state: string) => void} [options.onSessionChange] - Session lifecycle changes.
    * @param {(message: object) => void} [options.onReceiverMessage] - Messages from the receiver.
+   * @param {(volume: {level: number, muted: boolean}) => void} [options.onVolumeChange] - Device volume changes.
    */
   constructor({
     applicationId,
@@ -31,6 +33,7 @@ class CastSender {
     onStateChange,
     onSessionChange,
     onReceiverMessage,
+    onVolumeChange,
   } = {}) {
     if (!applicationId) {
       throw new Error("A Chromecast receiver application id is required.");
@@ -41,6 +44,7 @@ class CastSender {
     this.#onStateChange = onStateChange || (() => {});
     this.#onSessionChange = onSessionChange || (() => {});
     this.#onReceiverMessage = onReceiverMessage || (() => {});
+    this.#onVolumeChange = onVolumeChange || (() => {});
   }
 
   get available() {
@@ -234,6 +238,14 @@ class CastSender {
     session.addMessageListener(this.#namespace, (_namespace, message) => {
       this.#onReceiverMessage(this.#parseMessage(message));
     });
+
+    const volumeEvent = window.cast?.framework?.SessionEventType?.VOLUME_CHANGED;
+
+    if (volumeEvent) {
+      session.addEventListener(volumeEvent, () =>
+        this.#onVolumeChange(this.getVolume()),
+      );
+    }
   }
 
   #parseMessage(message) {
@@ -295,6 +307,38 @@ class CastSender {
     }
 
     await session.sendMessage(this.#namespace, message);
+  }
+
+  /**
+   * Current device volume, or null when not connected.
+   * @returns {?{level: number, muted: boolean}}
+   */
+  getVolume() {
+    const session = this.getSession();
+
+    if (!session) {
+      return null;
+    }
+
+    return { level: session.getVolume(), muted: session.isMute() };
+  }
+
+  /** Set the Chromecast device volume (0..1). */
+  async setVolume(level) {
+    const session = this.getSession();
+
+    if (session) {
+      await session.setVolume(Math.min(1, Math.max(0, level)));
+    }
+  }
+
+  /** Mute or unmute the Chromecast device. */
+  async setMuted(muted) {
+    const session = this.getSession();
+
+    if (session) {
+      await session.setMute(Boolean(muted));
+    }
   }
 
   /**

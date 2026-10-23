@@ -235,8 +235,10 @@ class MeetingsClient {
         microphone: this.#localStreams.microphone || undefined,
         camera: this.#localStreams.camera || undefined,
       },
-      audioEnabled: Boolean(this.#localStreams.microphone),
-      videoEnabled: Boolean(this.#localStreams.camera),
+      // In SDK 3.x audioEnabled/videoEnabled=false also disables *receiving*,
+      // so keep them on and control sending with sendAudio/sendVideo below.
+      audioEnabled: true,
+      videoEnabled: true,
       allowMediaInLobby: true,
       additionalMediaOptions: {
         receiveAudio: DEFAULT_MEDIA_SETTINGS.receiveAudio,

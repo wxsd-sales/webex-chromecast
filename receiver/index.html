@@ -20,10 +20,34 @@
     <script crossorigin src="https://cdn.jsdelivr.net/npm/webex@3.12.0/umd/webex.min.js"></script>
   </head>
   <body class="mds-theme-stable-darkWebex">
-    <div class="stage">
-      <video id="remoteVideo" class="video-remote" autoplay playsinline></video>
+    <!--
+      The stage's data attributes drive the layout (see styles.css):
+        data-presentation  presentation | pip | top
+        data-pip           top-left | top-right | bottom-left | bottom-right
+        data-has-share     true | false
+        data-multistream   true | false
+        data-participants  speaker | grid | prominent
+    -->
+    <div
+      class="stage"
+      id="stage"
+      data-presentation="pip"
+      data-pip="bottom-right"
+      data-has-share="false"
+      data-multistream="false"
+      data-participants="speaker"
+    >
       <video id="remoteShare" class="video-share" autoplay playsinline hidden></video>
+
+      <div class="video-area" id="videoArea">
+        <!-- Standard (transcoded) mode: one composed video from Webex. -->
+        <video id="remoteVideo" class="video-remote" autoplay playsinline></video>
+        <!-- Multistream mode: one tile per participant stream. -->
+        <div id="tiles" class="tiles"></div>
+      </div>
+
       <audio id="remoteAudio" autoplay></audio>
+      <div id="audioSinks" hidden></div>
 
       <div class="overlay" id="overlay">
         <span class="icon icon-webex-helix-regular overlay__logo" aria-hidden="true"></span>

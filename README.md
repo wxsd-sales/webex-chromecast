@@ -94,6 +94,18 @@ npm run proxy
 3. Open the client app, sign in with Webex, pick or enter a meeting, then use the
    Cast button to select your Chromecast and send the meeting to the TV.
 
+4. While casting, the **Chromecast layout** panel in the client controls what the
+   TV shows:
+   - **When presenting:** presentation only, picture-in-picture (with a
+     selectable corner), or participants on top with the presentation below.
+   - **Participants view:** active speaker, grid, or speaker + others.
+   - **Meeting audio plays on:** the Chromecast or the browser, with a volume
+     slider (the Chromecast's device volume) and mute.
+   - **Multistream (beta):** tick the option on the meetings screen before
+     joining to get one video per participant (a filmstrip above a
+     presentation). If multistream can't be set up the receiver falls back to
+     standard video.
+
 > **Security note:** for demo simplicity the receiver reuses the signed-in
 > user's Webex access token (sent over the local Cast channel) to join the
 > meeting. In production, mint a short-lived guest token for the receiver

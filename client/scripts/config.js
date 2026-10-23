@@ -43,6 +43,20 @@ export function resolveReceiverApplicationId() {
 export const CAST_NAMESPACE = "urn:x-cast:com.cisco.wxsd.webex-chromecast";
 
 /**
+ * Default Chromecast view, sent with JOIN_MEETING and SET_VIEW.
+ *  - presentation: "presentation" (share only) | "pip" | "top" (participants above)
+ *  - pipPosition: "top-left" | "top-right" | "bottom-left" | "bottom-right"
+ *  - participants: "speaker" | "grid" | "prominent"
+ *  - audioOutput: "receiver" (Chromecast) | "client" (this device)
+ */
+export const DEFAULT_CAST_VIEW = {
+  presentation: "pip",
+  pipPosition: "bottom-right",
+  participants: "speaker",
+  audioOutput: "receiver",
+};
+
+/**
  * Message types exchanged over CAST_NAMESPACE.
  */
 export const CAST_MESSAGE_TYPES = {
@@ -50,6 +64,8 @@ export const CAST_MESSAGE_TYPES = {
   JOIN_MEETING: "JOIN_MEETING",
   /** Sender -> receiver: leave the current meeting. */
   LEAVE_MEETING: "LEAVE_MEETING",
+  /** Sender -> receiver: change the on-screen layout / audio output. */
+  SET_VIEW: "SET_VIEW",
   /** Receiver -> sender: status/lifecycle updates. */
   STATUS: "STATUS",
 };

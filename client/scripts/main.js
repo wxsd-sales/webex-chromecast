@@ -7,9 +7,33 @@ import { resolveWebexApiBaseUrl, isLocalDevProxyEnabled } from "./webex-config.j
 import {
   resolveReceiverApplicationId,
   CAST_MESSAGE_TYPES,
+  DEFAULT_CAST_VIEW,
 } from "./config.js";
 
 const oauth = new OAuth();
+
+const STORAGE_KEY = "webex-chromecast_cast_options";
+
+function loadCastOptions() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+  } catch {
+    return {};
+  }
+}
+
+function saveCastOptions() {
+  try {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ view: app.view, multistream: app.multistream }),
+    );
+  } catch {
+    /* storage unavailable */
+  }
+}
+
+const savedOptions = loadCastOptions();
 
 const app = {
   dom: {},
@@ -24,6 +48,11 @@ const app = {
   audioMuted: false,
   videoMuted: false,
   castState: "NO_DEVICES_AVAILABLE",
+  view: { ...DEFAULT_CAST_VIEW, ...savedOptions.view },
+  multistream: Boolean(savedOptions.multistream),
+  receiverInfo: { hasShare: false, multistream: false },
+  clientVolume: 1,
+  clientMuted: false,
 };
 
 window.addEventListener("DOMContentLoaded", initializeApp);
@@ -31,6 +60,9 @@ window.addEventListener("DOMContentLoaded", initializeApp);
 async function initializeApp() {
   app.dom = collectDom();
   bindUiEvents();
+  renderViewControls();
+  applyClientAudio();
+  syncVolumeUi();
   initializeCast();
 
   initializeAuth();
@@ -68,6 +100,14 @@ function collectDom() {
     castStatePill: document.querySelector("#castStatePill"),
     castStatusText: document.querySelector("#castStatusText"),
     castBtn: document.querySelector("#castBtn"),
+    castLayoutPanel: document.querySelector("#castLayoutPanel"),
+    layoutHint: document.querySelector("#layoutHint"),
+    pipPositionGroup: document.querySelector("#pipPositionGroup"),
+    viewButtons: [...document.querySelectorAll("[data-view-key]")],
+    multistreamToggle: document.querySelector("#multistreamToggle"),
+    volumeSlider: document.querySelector("#volumeSlider"),
+    volumeLabel: document.querySelector("#volumeLabel"),
+    volumeMuteBtn: document.querySelector("#volumeMuteBtn"),
     stopCastBtn: document.querySelector("#stopCastBtn"),
     receiverStatus: document.querySelector("#receiverStatus"),
     errorMessage: document.querySelector("#errorMessage"),
@@ -113,6 +153,17 @@ function bindUiEvents() {
   app.dom.toggleVideoBtn?.addEventListener("click", toggleVideo);
   app.dom.leaveBtn?.addEventListener("click", leaveMeeting);
   app.dom.castBtn?.addEventListener("click", requestCast);
+  for (const button of app.dom.viewButtons) {
+    button.addEventListener("click", () =>
+      setView(button.dataset.viewKey, button.dataset.viewValue),
+    );
+  }
+  app.dom.multistreamToggle?.addEventListener("change", () => {
+    app.multistream = app.dom.multistreamToggle.checked;
+    saveCastOptions();
+  });
+  app.dom.volumeSlider?.addEventListener("input", onVolumeInput);
+  app.dom.volumeMuteBtn?.addEventListener("click", onMuteClick);
   app.dom.headerCastBtn?.addEventListener("click", requestCast);
   app.dom.stopCastBtn?.addEventListener("click", stopCast);
   app.dom.errorRetryBtn?.addEventListener("click", () => {
@@ -412,6 +463,8 @@ async function joinMeeting(destination, title) {
   setMeetingTitle(app.currentTitle);
   setMeetingStatus("Joining…");
   resetVideoUi();
+  applyClientAudio();
+  syncVolumeUi();
 
   try {
     if (app.registerPromise) {
@@ -547,6 +600,7 @@ async function initializeCast() {
       onStateChange: handleCastStateChange,
       onSessionChange: handleCastSessionChange,
       onReceiverMessage: handleReceiverMessage,
+      onVolumeChange: () => syncVolumeUi(),
     });
 
     // The sender stays in place even if the framework loads late; the UI
@@ -575,9 +629,12 @@ function handleCastSessionChange(sessionState) {
 
   if (sessionState === "SESSION_ENDED") {
     setReceiverStatus(null);
+    app.receiverInfo = { hasShare: false, multistream: false };
   }
 
   updateCastUi();
+  applyClientAudio();
+  syncVolumeUi();
 }
 
 function handleReceiverMessage(message) {
@@ -587,6 +644,12 @@ function handleReceiverMessage(message) {
 
   const text = message.message || message.state || "";
   setReceiverStatus(text ? `TV: ${text}` : null);
+
+  app.receiverInfo = {
+    hasShare: Boolean(message.hasShare),
+    multistream: Boolean(message.multistream),
+  };
+  renderViewControls();
 }
 
 function castCurrentMeeting() {
@@ -603,6 +666,8 @@ function castCurrentMeeting() {
       destination: app.currentDestination,
       title: app.currentTitle,
       accessToken: app.oauthCredentials?.accessToken,
+      view: app.view,
+      multistream: app.multistream,
     })
     .then(() => setReceiverStatus("TV: joining meeting…"))
     .catch((error) => {
@@ -674,10 +739,141 @@ function updateCastUi() {
     app.dom.stopCastBtn.hidden = !connected;
   }
 
+  if (app.dom.castLayoutPanel) {
+    app.dom.castLayoutPanel.hidden = !connected;
+  }
+
   if (app.dom.headerCastBtn) {
     app.dom.headerCastBtn.disabled = !supported;
     app.dom.headerCastBtn.classList.toggle("header-cast--active", connected);
   }
+}
+
+/* ----------------------------------------------------- Cast layout/audio --- */
+
+function setView(key, value) {
+  if (!(key in app.view) || !value) {
+    return;
+  }
+
+  app.view[key] = value;
+  saveCastOptions();
+  renderViewControls();
+  applyClientAudio();
+  syncVolumeUi();
+
+  if (app.castSender?.isConnected()) {
+    app.castSender
+      .sendMessage({ type: CAST_MESSAGE_TYPES.SET_VIEW, view: app.view })
+      .catch((error) => {
+        setReceiverStatus(`TV: layout update failed (${formatError(error)})`);
+      });
+  }
+}
+
+function renderViewControls() {
+  for (const button of app.dom.viewButtons || []) {
+    const selected = app.view[button.dataset.viewKey] === button.dataset.viewValue;
+    button.setAttribute("aria-pressed", String(selected));
+  }
+
+  if (app.dom.pipPositionGroup) {
+    app.dom.pipPositionGroup.hidden = app.view.presentation !== "pip";
+  }
+
+  if (app.dom.multistreamToggle) {
+    app.dom.multistreamToggle.checked = app.multistream;
+  }
+
+  if (app.dom.layoutHint) {
+    const parts = [];
+
+    if (app.receiverInfo.hasShare) {
+      parts.push("presentation active");
+    }
+
+    parts.push(app.receiverInfo.multistream ? "multistream" : "standard video");
+    app.dom.layoutHint.textContent = parts.join(" · ");
+  }
+}
+
+function audioOnReceiver() {
+  return Boolean(app.castSender?.isConnected()) && app.view.audioOutput === "receiver";
+}
+
+/** The browser plays meeting audio unless it's routed to the Chromecast. */
+function applyClientAudio() {
+  const audio = app.dom.remoteAudio;
+
+  if (!audio) {
+    return;
+  }
+
+  audio.muted = audioOnReceiver() || app.clientMuted;
+  audio.volume = app.clientVolume;
+}
+
+function syncVolumeUi() {
+  const { volumeSlider, volumeLabel, volumeMuteBtn } = app.dom;
+
+  if (!volumeSlider) {
+    return;
+  }
+
+  let level = app.clientVolume;
+  let muted = app.clientMuted;
+
+  if (audioOnReceiver()) {
+    const device = app.castSender.getVolume();
+
+    if (device) {
+      level = device.level;
+      muted = device.muted;
+    }
+  }
+
+  volumeSlider.value = String(Math.round(level * 100));
+
+  if (volumeLabel) {
+    volumeLabel.textContent = `${Math.round(level * 100)}%`;
+  }
+
+  if (volumeMuteBtn) {
+    volumeMuteBtn.setAttribute("aria-pressed", String(muted));
+    volumeMuteBtn.textContent = muted ? "Unmute" : "Mute";
+  }
+}
+
+async function onVolumeInput() {
+  const level = Number(app.dom.volumeSlider.value) / 100;
+
+  try {
+    if (audioOnReceiver()) {
+      await app.castSender.setVolume(level);
+    } else {
+      app.clientVolume = level;
+      applyClientAudio();
+    }
+  } catch (error) {
+    console.warn("[cast] volume change failed:", error);
+  }
+
+  syncVolumeUi();
+}
+
+async function onMuteClick() {
+  try {
+    if (audioOnReceiver()) {
+      await app.castSender.setMuted(!app.castSender.getVolume()?.muted);
+    } else {
+      app.clientMuted = !app.clientMuted;
+      applyClientAudio();
+    }
+  } catch (error) {
+    console.warn("[cast] mute change failed:", error);
+  }
+
+  syncVolumeUi();
 }
 
 /* ----------------------------------------------------------- UI helpers --- */

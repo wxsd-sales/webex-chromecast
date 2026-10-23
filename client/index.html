@@ -162,6 +162,13 @@
                 >Enter a webex.com meeting link or a SIP address, or join your own
                 Personal Room.</small
               >
+              <label class="option-check">
+                <input id="multistreamToggle" type="checkbox" />
+                <span>
+                  Chromecast: use multistream (participant filmstrip, beta).
+                  Applies the next time a meeting is joined.
+                </span>
+              </label>
             </section>
 
             <section class="control-section" aria-label="Your meetings">
@@ -264,6 +271,68 @@
                 </button>
               </div>
               <small id="receiverStatus" class="cast-receiver-status" hidden></small>
+            </section>
+
+            <section
+              id="castLayoutPanel"
+              class="control-section layout-panel"
+              aria-label="Chromecast layout and audio"
+              hidden
+            >
+              <div class="section-heading">
+                <h3>Chromecast layout</h3>
+                <span id="layoutHint" class="cast-status"></span>
+              </div>
+
+              <div class="option-group" role="group" aria-label="When presenting">
+                <span class="option-label">When presenting</span>
+                <div class="segmented">
+                <button type="button" data-view-key="presentation" data-view-value="presentation" aria-pressed="false">Presentation only</button>
+                <button type="button" data-view-key="presentation" data-view-value="pip" aria-pressed="false">Picture-in-picture</button>
+                <button type="button" data-view-key="presentation" data-view-value="top" aria-pressed="false">Participants on top</button>
+                </div>
+              </div>
+
+              <div class="option-group" id="pipPositionGroup" role="group" aria-label="Picture-in-picture position">
+                <span class="option-label">Picture-in-picture position</span>
+                <div class="segmented">
+                <button type="button" data-view-key="pipPosition" data-view-value="top-left" aria-pressed="false">Top left</button>
+                <button type="button" data-view-key="pipPosition" data-view-value="top-right" aria-pressed="false">Top right</button>
+                <button type="button" data-view-key="pipPosition" data-view-value="bottom-left" aria-pressed="false">Bottom left</button>
+                <button type="button" data-view-key="pipPosition" data-view-value="bottom-right" aria-pressed="false">Bottom right</button>
+                </div>
+              </div>
+
+              <div class="option-group" role="group" aria-label="Participants view">
+                <span class="option-label">Participants view</span>
+                <div class="segmented">
+                <button type="button" data-view-key="participants" data-view-value="speaker" aria-pressed="false">Active speaker</button>
+                <button type="button" data-view-key="participants" data-view-value="grid" aria-pressed="false">Grid</button>
+                <button type="button" data-view-key="participants" data-view-value="prominent" aria-pressed="false">Speaker + others</button>
+                </div>
+              </div>
+
+              <div class="option-group" role="group" aria-label="Audio output">
+                <span class="option-label">Meeting audio plays on</span>
+                <div class="segmented">
+                <button type="button" data-view-key="audioOutput" data-view-value="receiver" aria-pressed="false">Chromecast</button>
+                <button type="button" data-view-key="audioOutput" data-view-value="client" aria-pressed="false">This device</button>
+                </div>
+              </div>
+
+              <div class="volume-row">
+                <button id="volumeMuteBtn" type="button" class="secondary-button" aria-pressed="false">Mute</button>
+                <input
+                  id="volumeSlider"
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="1"
+                  value="100"
+                  aria-label="Volume"
+                />
+                <span id="volumeLabel" class="cast-status">100%</span>
+              </div>
             </section>
           </section>
 
